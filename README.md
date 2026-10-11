@@ -45,7 +45,7 @@ docker run -d --name mawazo-db -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE
    - `DATABASE_URL=mysql://UTILISATEUR:MOT_DE_PASSE@localhost:3306/u506684809_MawazoH`
    - `UPLOAD_DIR=` un dossier **persistant hors de l'application** (ex. `/home/<compte>/mawazo-uploads`)
    - `NEXT_PUBLIC_SITE_URL=https://<domaine>`
-4. Première fois : lancer `npm run db:migrate` puis `npm run db:seed` (avec `SEED_OWNER_EMAIL`, `SEED_OWNER_NAME`, `SEED_OWNER_PASSWORD`), puis retirer `SEED_OWNER_PASSWORD`.
+4. Première fois, depuis un PC : hPanel > MySQL distant > autoriser l'IP du PC, remplir `.env.hostinger` (hôte distant, identifiants, compte de la gérante), puis `npm run db:migrate:hostinger` et `npm run db:seed:hostinger`. Retirer ensuite l'IP du MySQL distant.
 5. Le build fonctionne même si la base n'est pas joignable depuis l'environnement de build : les pages sont alors prérendues avec les contenus de départ puis mises à jour depuis la base en moins d'une minute après la mise en ligne. Node.js 22 minimum.
 6. Sauvegardes : exporter la base (hPanel) **et** le dossier `UPLOAD_DIR`.
 

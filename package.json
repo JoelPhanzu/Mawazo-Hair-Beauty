@@ -15,7 +15,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:migrate:hostinger": "node --env-file=.env.hostinger node_modules/drizzle-kit/bin.cjs migrate",
+    "db:seed:hostinger": "tsx --env-file=.env.hostinger db/seed.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
