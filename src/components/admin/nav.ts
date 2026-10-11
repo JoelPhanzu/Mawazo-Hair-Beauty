@@ -1,0 +1,16 @@
+export const ADMIN_NAV = [
+  { href: '/admin', label: 'Accueil', group: 'Suivi' },
+  { href: '/admin/reservations', label: 'Réservations', group: 'Suivi' },
+  { href: '/admin/commandes', label: 'Commandes', group: 'Suivi' },
+  { href: '/admin/prestations', label: 'Prestations', group: 'Catalogue' },
+  { href: '/admin/produits', label: 'Produits', group: 'Catalogue' },
+  { href: '/admin/categories', label: 'Catégories', group: 'Catalogue' },
+  { href: '/admin/promotions', label: 'Promotions', group: 'Catalogue' },
+  { href: '/admin/galerie', label: 'Avant / Après', group: 'Contenus' },
+  { href: '/admin/avis', label: 'Avis clientes', group: 'Contenus' },
+  { href: '/admin/blog', label: 'Blog', group: 'Contenus' },
+  { href: '/admin/pages', label: 'Textes et images du site', group: 'Contenus' },
+  { href: '/admin/parametres', label: 'Coordonnées et paiement', group: 'Réglages' },
+  { href: '/admin/utilisateurs', label: 'Utilisateurs', group: 'Réglages', managersOnly: true },
+  { href: '/admin/compte', label: 'Mon compte', group: 'Réglages' },
+] as const

@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mawazo Hair & Beauty
 
-## Getting Started
+Site du salon Mawazo Hair & Beauty (Lingwala, Kinshasa) et son espace de gestion `/admin`.
+Réalisé par Lean Market. Voir `CLAUDE.md` pour le cahier des charges et les décisions.
 
-First, run the development server:
+**Stack** : Next.js 16 (App Router, Cache Components), TypeScript, Tailwind CSS 4, MySQL / MariaDB + Drizzle, Zod, Vitest, Playwright.
+
+## Démarrer en local
 
 ```bash
+npm install
+cp .env.example .env.local      # puis remplir
+npm run db:migrate              # crée les tables
+npm run db:seed                 # contenus de départ + premier compte admin (SEED_OWNER_*)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sans `DATABASE_URL`, le site public s'affiche avec les contenus de départ (`src/db/seed-data.ts`) ; l'admin nécessite la base.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Base de test locale possible avec Docker :
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker run -d --name mawazo-db -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE=mawazo \
+  -e MARIADB_USER=mawazo -e MARIADB_PASSWORD=<mot-de-passe> -p 3307:3306 mariadb:11.4
+```
 
-## Learn More
+## Commandes
 
-To learn more about Next.js, take a look at the following resources:
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | développement |
+| `npm run build` / `npm start` | production |
+| `npm run lint` / `npm run typecheck` | qualité |
+| `npm run test` | tests unitaires (prix, promotions, messages WhatsApp…) |
+| `npm run test:e2e` | parcours complets avec Playwright (base de `.env.local`, jamais la production) |
+| `npm run db:generate` | nouvelle migration après modification de `src/db/schema.ts` |
+| `npm run db:migrate` | applique les migrations |
+| `npm run db:seed` | remplit une base vide |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Mise en ligne chez Hostinger (Node.js Web App)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. hPanel > **Bases de données MySQL** : noter hôte, utilisateur, mot de passe de `u506684809_MawazoH`.
+2. hPanel > **Sites web > Ajouter > Node.js Web App** : relier ce dépôt GitHub, commande de build `npm run build`, commande de démarrage `npm start`.
+3. Variables d'environnement de l'application :
+   - `DATABASE_URL=mysql://UTILISATEUR:MOT_DE_PASSE@localhost:3306/u506684809_MawazoH`
+   - `UPLOAD_DIR=` un dossier **persistant hors de l'application** (ex. `/home/<compte>/mawazo-uploads`)
+   - `NEXT_PUBLIC_SITE_URL=https://<domaine>`
+4. Première fois : lancer `npm run db:migrate` puis `npm run db:seed` (avec `SEED_OWNER_EMAIL`, `SEED_OWNER_NAME`, `SEED_OWNER_PASSWORD`), puis retirer `SEED_OWNER_PASSWORD`.
+5. Sauvegardes : exporter la base (hPanel) **et** le dossier `UPLOAD_DIR`.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Pour travailler en local sur la base Hostinger : hPanel > MySQL distant > autoriser votre IP, et utiliser l'hôte distant indiqué.

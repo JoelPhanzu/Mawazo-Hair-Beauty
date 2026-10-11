@@ -1,26 +1,107 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
+/*
+ * Charte Mawazo — proposition à valider avec la cliente (CLAUDE.md §9).
+ * Toutes les couleurs sont définies ici, une seule fois : changer de charte = modifier ce bloc.
+ * Formes : surfaces et photos à angles droits ; éléments interactifs (boutons, champs) en pilule.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --cream: #f4ece3;
+  --cream-deep: #eadfd2;
+  --ink: #2b1b15;
+  --ink-soft: #5e4a40;
+  --line: #d6c7b8;
+  --accent: #6d1f2f;
+  --accent-ink: #fbf3ec;
+  --accent-soft: #e9d3cf;
+  --photo-a: #c9ad97;
+  --photo-b: #8e6b58;
+  --whatsapp: #1f7a4d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --cream: #1d1512;
+    --cream-deep: #271d19;
+    --ink: #f2e6db;
+    --ink-soft: #c4b1a4;
+    --line: #43342d;
+    --accent: #e7a6b1;
+    --accent-ink: #2a1016;
+    --accent-soft: #3b2226;
+    --photo-a: #4a3830;
+    --photo-b: #2e221d;
+    --whatsapp: #5fcf94;
   }
 }
 
+@theme inline {
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-whatsapp: var(--whatsapp);
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-cormorant);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Emplacement photo : reste élégant tant que la vraie photo n'est pas fournie. */
+.photo-slot {
+  background:
+    radial-gradient(
+      120% 90% at 20% 10%,
+      color-mix(in oklab, var(--photo-a) 85%, white 15%),
+      transparent 60%
+    ),
+    linear-gradient(160deg, var(--photo-a), var(--photo-b));
+}
+
+/*
+ * Apparition au chargement (héro) et au défilement (sections), en CSS pur.
+ * Sans prise en charge de animation-timeline, le contenu s'affiche simplement.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 0.9s var(--ease-out-soft) both;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  @supports (animation-timeline: view()) {
+    [data-reveal] {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
 }
