@@ -14,13 +14,13 @@ export const seedSettings = {
   address: 'Lingwala, près du Palais du Peuple, Kinshasa',
   googleMapsUrl: null as string | null,
   openingHours: {
-    lundi: '9h00 - 19h00',
+    lundi: 'Fermé',
     mardi: '9h00 - 19h00',
     mercredi: '9h00 - 19h00',
     jeudi: '9h00 - 19h00',
     vendredi: '9h00 - 19h00',
     samedi: '9h00 - 19h00',
-    dimanche: 'Sur rendez-vous',
+    dimanche: '9h00 - 19h00',
   } as OpeningHours,
   socialLinks: { instagram: 'https://www.instagram.com/mawazo.hair_beauty/' } as SocialLinks,
   // Numéros mobile money à saisir par la cliente depuis l'admin.

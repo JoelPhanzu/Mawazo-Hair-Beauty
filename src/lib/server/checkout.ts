@@ -15,7 +15,7 @@ import { productPrice } from '@/lib/pricing/items'
 import { generateReference } from '@/lib/reference'
 import { bookingSchema, orderSchema } from '@/lib/validation/public'
 import { buildWhatsAppUrl } from '@/lib/whatsapp'
-import { kinshasaDateString } from '@/lib/dates'
+import { formatIsoDate, kinshasaDateString } from '@/lib/dates'
 import type { EffectivePrice } from '@/lib/pricing/types'
 import type { Product } from '@/types/content'
 
@@ -59,6 +59,16 @@ export async function createBooking(input: unknown): Promise<CheckoutResult> {
   const [services, settings] = await Promise.all([getPublishedServices(), getSiteSettings()])
   const service = services.find((s) => s.slug === data.serviceSlug)
   if (!service) return { ok: false, status: 422, errors: { serviceSlug: 'Prestation inconnue' } }
+
+  // Jour de fermeture (horaires modifiables dans l'admin, ex. « lundi : Fermé »).
+  const dayName = formatIsoDate(data.requestedDate).split(' ')[0]
+  if (/ferm/i.test(settings.openingHours[dayName] ?? '')) {
+    return {
+      ok: false,
+      status: 422,
+      errors: { requestedDate: `Le salon est fermé le ${dayName}. Choisissez un autre jour.` },
+    }
+  }
 
   let reference: string | null = null
   if (isDatabaseConfigured()) {

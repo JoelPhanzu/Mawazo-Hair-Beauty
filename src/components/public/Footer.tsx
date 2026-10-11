@@ -109,9 +109,14 @@ export async function Footer() {
       </div>
       <div className="text-ink-soft mx-auto flex max-w-[1320px] flex-wrap justify-between gap-4 px-4 pb-8 text-xs md:px-8">
         <p>© {settings.businessName}</p>
-        <Link href="/mentions-legales" className="hover:text-ink">
-          Mentions légales
-        </Link>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <Link href="/mentions-legales" className="hover:text-ink">
+            Mentions légales
+          </Link>
+          <p>
+            by <span className="text-ink font-semibold">Lean Market</span>
+          </p>
+        </div>
       </div>
     </footer>
   )

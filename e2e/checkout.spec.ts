@@ -1,12 +1,19 @@
 import { expect, test } from '@playwright/test'
 import { captureWhatsApp } from './helpers'
 
+/** Prochain jour d'ouverture (le salon est fermé le lundi). */
+function nextOpenDay(): string {
+  const d = new Date(Date.now() + 24 * 3600 * 1000)
+  if (d.getUTCDay() === 1) d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 test('réservation : enregistrée puis WhatsApp pré-rempli avec la référence', async ({ page }) => {
   const whatsapp = await captureWhatsApp(page)
   await page.goto('/reservation?prestation=tissages')
 
   await expect(page.getByLabel('Prestation')).toHaveValue('tissages')
-  const tomorrow = new Date(Date.now() + 24 * 3600 * 1000).toISOString().slice(0, 10)
+  const tomorrow = nextOpenDay()
   await page.getByLabel('Date souhaitée').fill(tomorrow)
   await page.getByLabel('Heure souhaitée').selectOption('10:30')
   await page.getByLabel('Nom complet').fill('Cliente Test')
@@ -21,12 +28,22 @@ test('réservation : enregistrée puis WhatsApp pré-rempli avec la référence'
   expect(text).toMatch(/Référence : R-[A-Z0-9]{5}/)
 })
 
+test('réservation : jour de fermeture refusé', async ({ page }) => {
+  const monday = new Date(Date.now() + 24 * 3600 * 1000)
+  while (monday.getUTCDay() !== 1) monday.setUTCDate(monday.getUTCDate() + 1)
+  await page.goto('/reservation?prestation=tissages')
+  await page.getByLabel('Date souhaitée').fill(monday.toISOString().slice(0, 10))
+  await page.getByLabel('Heure souhaitée').selectOption('10:30')
+  await page.getByLabel('Nom complet').fill('Cliente Test')
+  await page.getByLabel('Téléphone (WhatsApp)').fill('085 087 14 55')
+  await page.getByRole('button', { name: /Envoyer ma demande/ }).click()
+  await expect(page.getByText(/fermé le lundi/)).toBeVisible()
+})
+
 test('réservation : téléphone invalide signalé, rien n’est envoyé', async ({ page }) => {
   await page.goto('/reservation')
   await page.getByLabel('Prestation').selectOption('braids')
-  await page
-    .getByLabel('Date souhaitée')
-    .fill(new Date(Date.now() + 86400000).toISOString().slice(0, 10))
+  await page.getByLabel('Date souhaitée').fill(nextOpenDay())
   await page.getByLabel('Heure souhaitée').selectOption('09:00')
   await page.getByLabel('Nom complet').fill('Cliente Test')
   await page.getByLabel('Téléphone (WhatsApp)').fill('12')
