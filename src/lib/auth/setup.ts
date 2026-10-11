@@ -15,7 +15,7 @@ import { createSession } from './session'
  * Dès qu'un compte existe, cette création est impossible.
  */
 const SETUP_CODE_HASH =
-  process.env.SETUP_CODE_HASH ?? '$2b$12$VRabXWy11wlovlBuqDCX0uus8oxFXeLiVU6zjc8guP/gF0dCj6ulO'
+  process.env.SETUP_CODE_HASH ?? '$2b$12$Khqzq8Fv6qlBAad3D18oougefb4SuHYxELgk6qiBvHsCYhGKrG6S2'
 
 export interface SetupState {
   error?: string

@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate && tsx db/embed-migrations.ts",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx --env-file=.env.local db/seed.ts",
     "db:studio": "drizzle-kit studio",

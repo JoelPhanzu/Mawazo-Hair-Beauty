@@ -4,3 +4,4 @@ package-lock.json
 supabase/.temp
 test-results
 playwright-report
+src/db/migrations.generated.ts
