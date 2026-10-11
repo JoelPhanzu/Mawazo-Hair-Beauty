@@ -17,6 +17,16 @@ export function isDatabaseConfigured(): boolean {
 
 let instance: Database | null = null
 
+/**
+ * Sur Hostinger, MySQL n'écoute que sur 127.0.0.1 : « localhost » (résolu en ::1 par Node)
+ * échoue. On corrige ici pour que DATABASE_URL fonctionne avec l'un comme l'autre.
+ */
+export function normalizeDatabaseUrl(raw: string): string {
+  const url = new URL(raw)
+  if (url.hostname === 'localhost') url.hostname = '127.0.0.1'
+  return url.toString()
+}
+
 export function getDb(): Database {
   if (instance) return instance
   const url = process.env.DATABASE_URL
@@ -24,7 +34,7 @@ export function getDb(): Database {
   const pool =
     globalThis.__mawazoPool ??
     mysql.createPool({
-      uri: url,
+      uri: normalizeDatabaseUrl(url),
       // Les dates sont stockées en UTC ; l'affichage se fait à l'heure de Kinshasa.
       timezone: 'Z',
       connectionLimit: 5,
