@@ -28,6 +28,7 @@ export function getDb(): Database {
       // Les dates sont stockées en UTC ; l'affichage se fait à l'heure de Kinshasa.
       timezone: 'Z',
       connectionLimit: 5,
+      connectTimeout: 5_000,
       enableKeepAlive: true,
     })
   if (process.env.NODE_ENV !== 'production') globalThis.__mawazoPool = pool

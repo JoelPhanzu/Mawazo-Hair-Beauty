@@ -29,7 +29,7 @@ docker run -d --name mawazo-db -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE
 | Commande | Rôle |
 |---|---|
 | `npm run dev` | développement |
-| `npm run build` / `npm start` | production |
+| `npm run build` / `npm start` | production (build avec webpack : Turbopack plante sur l'environnement de build Hostinger) |
 | `npm run lint` / `npm run typecheck` | qualité |
 | `npm run test` | tests unitaires (prix, promotions, messages WhatsApp…) |
 | `npm run test:e2e` | parcours complets avec Playwright (base de `.env.local`, jamais la production) |
@@ -46,6 +46,7 @@ docker run -d --name mawazo-db -e MARIADB_ROOT_PASSWORD=root -e MARIADB_DATABASE
    - `UPLOAD_DIR=` un dossier **persistant hors de l'application** (ex. `/home/<compte>/mawazo-uploads`)
    - `NEXT_PUBLIC_SITE_URL=https://<domaine>`
 4. Première fois : lancer `npm run db:migrate` puis `npm run db:seed` (avec `SEED_OWNER_EMAIL`, `SEED_OWNER_NAME`, `SEED_OWNER_PASSWORD`), puis retirer `SEED_OWNER_PASSWORD`.
-5. Sauvegardes : exporter la base (hPanel) **et** le dossier `UPLOAD_DIR`.
+5. Le build fonctionne même si la base n'est pas joignable depuis l'environnement de build : les pages sont alors prérendues avec les contenus de départ puis mises à jour depuis la base en moins d'une minute après la mise en ligne. Node.js 22 minimum.
+6. Sauvegardes : exporter la base (hPanel) **et** le dossier `UPLOAD_DIR`.
 
 Pour travailler en local sur la base Hostinger : hPanel > MySQL distant > autoriser votre IP, et utiliser l'hôte distant indiqué.

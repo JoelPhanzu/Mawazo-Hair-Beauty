@@ -42,9 +42,30 @@ export const CACHE_TAGS = {
 
 export type CacheTag = (typeof CACHE_TAGS)[keyof typeof CACHE_TAGS]
 
-function cached(tag: CacheTag) {
-  cacheLife('hours')
-  cacheTag(tag)
+/**
+ * Lecture en base avec durée de cache adaptée.
+ * Pendant le build seulement, si la base est injoignable (environnement de build isolé),
+ * on prérend avec les contenus de départ, revalidés chaque minute : la vraie base
+ * prend le relais dès la mise en ligne. En fonctionnement normal, une erreur reste une erreur.
+ */
+async function fromDb<T>(read: () => Promise<T>, fallback: T): Promise<T> {
+  if (!isDatabaseConfigured()) {
+    cacheLife('hours')
+    return fallback
+  }
+  try {
+    const value = await read()
+    cacheLife('hours')
+    return value
+  } catch (error) {
+    if (process.env.NEXT_PHASE !== 'phase-production-build') throw error
+    console.warn(
+      '[build] base injoignable, contenus de départ utilisés :',
+      (error as Error).message,
+    )
+    cacheLife('minutes')
+    return fallback
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,23 +74,23 @@ function cached(tag: CacheTag) {
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   'use cache'
-  cached(CACHE_TAGS.settings)
-  if (!isDatabaseConfigured()) return fallbackSettings
-
-  const [row] = await getDb().select().from(schema.settings).where(eq(schema.settings.id, 1))
-  if (!row) throw new Error('Paramètres introuvables : lancer « npm run db:seed »')
-  return {
-    businessName: row.businessName,
-    tagline: row.tagline,
-    phone: row.phone,
-    whatsappNumber: row.whatsappNumber,
-    emails: row.emails,
-    address: row.address,
-    googleMapsUrl: row.googleMapsUrl,
-    openingHours: row.openingHours,
-    socialLinks: row.socialLinks,
-    paymentNumbers: row.paymentNumbers,
-  }
+  cacheTag(CACHE_TAGS.settings)
+  return fromDb(async () => {
+    const [row] = await getDb().select().from(schema.settings).where(eq(schema.settings.id, 1))
+    if (!row) throw new Error('Paramètres introuvables : lancer « npm run db:seed »')
+    return {
+      businessName: row.businessName,
+      tagline: row.tagline,
+      phone: row.phone,
+      whatsappNumber: row.whatsappNumber,
+      emails: row.emails,
+      address: row.address,
+      googleMapsUrl: row.googleMapsUrl,
+      openingHours: row.openingHours,
+      socialLinks: row.socialLinks,
+      paymentNumbers: row.paymentNumbers,
+    }
+  }, fallbackSettings)
 }
 
 // ---------------------------------------------------------------------------
@@ -78,46 +99,46 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
 export async function getServiceCategories(): Promise<Category[]> {
   'use cache'
-  cached(CACHE_TAGS.services)
-  if (!isDatabaseConfigured()) return fallbackServiceCategories
-
-  return getDb()
-    .select({
-      id: schema.serviceCategories.id,
-      name: schema.serviceCategories.name,
-      slug: schema.serviceCategories.slug,
-      imageUrl: schema.serviceCategories.imageUrl,
-    })
-    .from(schema.serviceCategories)
-    .orderBy(asc(schema.serviceCategories.position))
+  cacheTag(CACHE_TAGS.services)
+  return fromDb(async () => {
+    return getDb()
+      .select({
+        id: schema.serviceCategories.id,
+        name: schema.serviceCategories.name,
+        slug: schema.serviceCategories.slug,
+        imageUrl: schema.serviceCategories.imageUrl,
+      })
+      .from(schema.serviceCategories)
+      .orderBy(asc(schema.serviceCategories.position))
+  }, fallbackServiceCategories)
 }
 
 export async function getPublishedServices(): Promise<Service[]> {
   'use cache'
-  cached(CACHE_TAGS.services)
-  if (!isDatabaseConfigured()) return fallbackServices
-
-  const rows = await getDb()
-    .select()
-    .from(schema.services)
-    .where(eq(schema.services.isPublished, true))
-    .orderBy(asc(schema.services.position))
-  return rows.map((s) => ({
-    id: s.id,
-    slug: s.slug,
-    name: s.name,
-    shortDescription: s.shortDescription,
-    longDescription: s.longDescription,
-    categoryId: s.categoryId,
-    durationMinMinutes: s.durationMinMinutes,
-    durationMaxMinutes: s.durationMaxMinutes,
-    priceAmount: s.priceAmount,
-    currency: s.currency,
-    priceIsFrom: s.priceIsFrom,
-    imageUrl: s.imageUrl,
-    gallery: s.gallery,
-    isFeatured: s.isFeatured,
-  }))
+  cacheTag(CACHE_TAGS.services)
+  return fromDb(async () => {
+    const rows = await getDb()
+      .select()
+      .from(schema.services)
+      .where(eq(schema.services.isPublished, true))
+      .orderBy(asc(schema.services.position))
+    return rows.map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      name: s.name,
+      shortDescription: s.shortDescription,
+      longDescription: s.longDescription,
+      categoryId: s.categoryId,
+      durationMinMinutes: s.durationMinMinutes,
+      durationMaxMinutes: s.durationMaxMinutes,
+      priceAmount: s.priceAmount,
+      currency: s.currency,
+      priceIsFrom: s.priceIsFrom,
+      imageUrl: s.imageUrl,
+      gallery: s.gallery,
+      isFeatured: s.isFeatured,
+    }))
+  }, fallbackServices)
 }
 
 export async function getServiceBySlug(slug: string): Promise<Service | null> {
@@ -131,44 +152,44 @@ export async function getServiceBySlug(slug: string): Promise<Service | null> {
 
 export async function getProductCategories(): Promise<Category[]> {
   'use cache'
-  cached(CACHE_TAGS.products)
-  if (!isDatabaseConfigured()) return fallbackProductCategories
-
-  return getDb()
-    .select({
-      id: schema.productCategories.id,
-      name: schema.productCategories.name,
-      slug: schema.productCategories.slug,
-      imageUrl: schema.productCategories.imageUrl,
-    })
-    .from(schema.productCategories)
-    .orderBy(asc(schema.productCategories.position))
+  cacheTag(CACHE_TAGS.products)
+  return fromDb(async () => {
+    return getDb()
+      .select({
+        id: schema.productCategories.id,
+        name: schema.productCategories.name,
+        slug: schema.productCategories.slug,
+        imageUrl: schema.productCategories.imageUrl,
+      })
+      .from(schema.productCategories)
+      .orderBy(asc(schema.productCategories.position))
+  }, fallbackProductCategories)
 }
 
 export async function getPublishedProducts(): Promise<Product[]> {
   'use cache'
-  cached(CACHE_TAGS.products)
-  if (!isDatabaseConfigured()) return fallbackProducts
-
-  const rows = await getDb()
-    .select()
-    .from(schema.products)
-    .where(eq(schema.products.isPublished, true))
-    .orderBy(asc(schema.products.position))
-  return rows.map((p) => ({
-    id: p.id,
-    slug: p.slug,
-    name: p.name,
-    description: p.description,
-    categoryId: p.categoryId,
-    priceAmount: p.priceAmount,
-    currency: p.currency,
-    compareAtAmount: p.compareAtAmount,
-    stock: p.stock,
-    variants: p.variants,
-    images: p.images,
-    isFeatured: p.isFeatured,
-  }))
+  cacheTag(CACHE_TAGS.products)
+  return fromDb(async () => {
+    const rows = await getDb()
+      .select()
+      .from(schema.products)
+      .where(eq(schema.products.isPublished, true))
+      .orderBy(asc(schema.products.position))
+    return rows.map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      description: p.description,
+      categoryId: p.categoryId,
+      priceAmount: p.priceAmount,
+      currency: p.currency,
+      compareAtAmount: p.compareAtAmount,
+      stock: p.stock,
+      variants: p.variants,
+      images: p.images,
+      isFeatured: p.isFeatured,
+    }))
+  }, fallbackProducts)
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -182,40 +203,40 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getPromotions(): Promise<PromotionCard[]> {
   'use cache'
-  cached(CACHE_TAGS.promotions)
-  if (!isDatabaseConfigured()) return fallbackPromotions
-
-  const db = getDb()
-  const [rows, targets] = await Promise.all([
-    db
-      .select()
-      .from(schema.promotions)
-      .where(eq(schema.promotions.isActive, true))
-      .orderBy(asc(schema.promotions.position)),
-    db.select().from(schema.promotionTargets),
-  ])
-  return rows.map((p) => ({
-    id: p.id,
-    title: p.title,
-    subtitle: p.subtitle,
-    description: p.description,
-    badge: p.badge,
-    bannerUrl: p.bannerUrl,
-    ctaLabel: p.ctaLabel,
-    ctaHref: p.ctaHref,
-    showBanner: p.showBanner,
-    discountType: p.discountType,
-    discountValue: p.discountValue,
-    scope: p.scope,
-    targets: targets
-      .filter((t) => t.promotionId === p.id)
-      .map((t) => ({ targetType: t.targetType, targetId: t.targetId })),
-    startsAt: p.startsAt?.toISOString() ?? null,
-    endsAt: p.endsAt?.toISOString() ?? null,
-    weekdays: p.weekdays,
-    isActive: p.isActive,
-    priority: p.priority,
-  }))
+  cacheTag(CACHE_TAGS.promotions)
+  return fromDb(async () => {
+    const db = getDb()
+    const [rows, targets] = await Promise.all([
+      db
+        .select()
+        .from(schema.promotions)
+        .where(eq(schema.promotions.isActive, true))
+        .orderBy(asc(schema.promotions.position)),
+      db.select().from(schema.promotionTargets),
+    ])
+    return rows.map((p) => ({
+      id: p.id,
+      title: p.title,
+      subtitle: p.subtitle,
+      description: p.description,
+      badge: p.badge,
+      bannerUrl: p.bannerUrl,
+      ctaLabel: p.ctaLabel,
+      ctaHref: p.ctaHref,
+      showBanner: p.showBanner,
+      discountType: p.discountType,
+      discountValue: p.discountValue,
+      scope: p.scope,
+      targets: targets
+        .filter((t) => t.promotionId === p.id)
+        .map((t) => ({ targetType: t.targetType, targetId: t.targetId })),
+      startsAt: p.startsAt?.toISOString() ?? null,
+      endsAt: p.endsAt?.toISOString() ?? null,
+      weekdays: p.weekdays,
+      isActive: p.isActive,
+      priority: p.priority,
+    }))
+  }, fallbackPromotions)
 }
 
 // ---------------------------------------------------------------------------
@@ -224,43 +245,46 @@ export async function getPromotions(): Promise<PromotionCard[]> {
 
 export async function getGalleryItems(): Promise<GalleryItem[]> {
   'use cache'
-  cached(CACHE_TAGS.gallery)
-  if (!isDatabaseConfigured()) return []
-
-  return getDb()
-    .select({
-      id: schema.galleryItems.id,
-      title: schema.galleryItems.title,
-      beforeImageUrl: schema.galleryItems.beforeImageUrl,
-      afterImageUrl: schema.galleryItems.afterImageUrl,
-      caption: schema.galleryItems.caption,
-      isFeatured: schema.galleryItems.isFeatured,
-    })
-    .from(schema.galleryItems)
-    .where(eq(schema.galleryItems.isPublished, true))
-    .orderBy(asc(schema.galleryItems.position))
+  cacheTag(CACHE_TAGS.gallery)
+  return fromDb(async () => {
+    return getDb()
+      .select({
+        id: schema.galleryItems.id,
+        title: schema.galleryItems.title,
+        beforeImageUrl: schema.galleryItems.beforeImageUrl,
+        afterImageUrl: schema.galleryItems.afterImageUrl,
+        caption: schema.galleryItems.caption,
+        isFeatured: schema.galleryItems.isFeatured,
+      })
+      .from(schema.galleryItems)
+      .where(eq(schema.galleryItems.isPublished, true))
+      .orderBy(asc(schema.galleryItems.position))
+  }, [])
 }
 
 /** Seuls les avis publiés AVEC l'accord de la cliente sont visibles. */
 export async function getTestimonials(): Promise<Testimonial[]> {
   'use cache'
-  cached(CACHE_TAGS.testimonials)
-  if (!isDatabaseConfigured()) return []
-
-  return getDb()
-    .select({
-      id: schema.testimonials.id,
-      displayName: schema.testimonials.displayName,
-      body: schema.testimonials.body,
-      rating: schema.testimonials.rating,
-      serviceName: schema.services.name,
-    })
-    .from(schema.testimonials)
-    .leftJoin(schema.services, eq(schema.testimonials.serviceId, schema.services.id))
-    .where(
-      and(eq(schema.testimonials.isPublished, true), eq(schema.testimonials.consentObtained, true)),
-    )
-    .orderBy(asc(schema.testimonials.position))
+  cacheTag(CACHE_TAGS.testimonials)
+  return fromDb(async () => {
+    return getDb()
+      .select({
+        id: schema.testimonials.id,
+        displayName: schema.testimonials.displayName,
+        body: schema.testimonials.body,
+        rating: schema.testimonials.rating,
+        serviceName: schema.services.name,
+      })
+      .from(schema.testimonials)
+      .leftJoin(schema.services, eq(schema.testimonials.serviceId, schema.services.id))
+      .where(
+        and(
+          eq(schema.testimonials.isPublished, true),
+          eq(schema.testimonials.consentObtained, true),
+        ),
+      )
+      .orderBy(asc(schema.testimonials.position))
+  }, [])
 }
 
 // ---------------------------------------------------------------------------
@@ -269,28 +293,28 @@ export async function getTestimonials(): Promise<Testimonial[]> {
 
 export async function getPublishedPosts(): Promise<Post[]> {
   'use cache'
-  cached(CACHE_TAGS.posts)
-  if (!isDatabaseConfigured()) return []
-
-  // Dans un cache : un article programmé apparaît au plus tard à l'expiration du cache.
-  const rows = await getDb()
-    .select()
-    .from(schema.posts)
-    .where(and(isNotNull(schema.posts.publishedAt), lte(schema.posts.publishedAt, new Date())))
-    .orderBy(desc(schema.posts.publishedAt))
-  return rows.map((p) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    excerpt: p.excerpt,
-    content: p.content,
-    imageUrl: p.imageUrl,
-    category: p.category,
-    readingMinutes: p.readingMinutes,
-    publishedAt: p.publishedAt!.toISOString(),
-    seoTitle: p.seoTitle,
-    seoDescription: p.seoDescription,
-  }))
+  cacheTag(CACHE_TAGS.posts)
+  return fromDb(async () => {
+    // Dans un cache : un article programmé apparaît au plus tard à l'expiration du cache.
+    const rows = await getDb()
+      .select()
+      .from(schema.posts)
+      .where(and(isNotNull(schema.posts.publishedAt), lte(schema.posts.publishedAt, new Date())))
+      .orderBy(desc(schema.posts.publishedAt))
+    return rows.map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      content: p.content,
+      imageUrl: p.imageUrl,
+      category: p.category,
+      readingMinutes: p.readingMinutes,
+      publishedAt: p.publishedAt!.toISOString(),
+      seoTitle: p.seoTitle,
+      seoDescription: p.seoDescription,
+    }))
+  }, [])
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
@@ -304,10 +328,11 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
 
 export async function getPageSections(): Promise<Record<string, PageSection>> {
   'use cache'
-  cached(CACHE_TAGS.pageSections)
+  cacheTag(CACHE_TAGS.pageSections)
 
-  const rows: PageSection[] = isDatabaseConfigured()
-    ? await getDb()
+  const rows = await fromDb<PageSection[]>(
+    () =>
+      getDb()
         .select({
           key: schema.pageSections.key,
           title: schema.pageSections.title,
@@ -318,8 +343,8 @@ export async function getPageSections(): Promise<Record<string, PageSection>> {
           buttonLabel: schema.pageSections.buttonLabel,
           buttonHref: schema.pageSections.buttonHref,
         })
-        .from(schema.pageSections)
-    : fallbackPageSections
-
+        .from(schema.pageSections),
+    fallbackPageSections,
+  )
   return Object.fromEntries(rows.map((s) => [s.key, s]))
 }
